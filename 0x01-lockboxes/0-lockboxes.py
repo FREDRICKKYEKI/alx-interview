@@ -18,15 +18,14 @@ def canUnlockAll(boxes):
     """
     Method that determines if all the boxes can be opened.
     """
-    if boxes is None or len(boxes) == 0:
-        return False
-
-    keys = [0]
-    for key in keys:
-        print(keys)
-        for newKey in boxes[key]:
-            if newKey not in keys and newKey < len(boxes):
-                keys.append(newKey)
-    if len(keys) == len(boxes):
-        return True
-    return False
+    n = len(boxes)
+    seen_boxes = set([0])
+    unseen_boxes = set(boxes[0]).difference(set([0]))
+    while len(unseen_boxes) > 0:
+        box_index = unseen_boxes.pop()
+        if not box_index or box_index >= n or box_index < 0:
+            continue
+        if box_index not in seen_boxes:
+            unseen_boxes = unseen_boxes.union(boxes[box_index])
+            seen_boxes.add(box_index)
+    return n == len(seen_boxes)
