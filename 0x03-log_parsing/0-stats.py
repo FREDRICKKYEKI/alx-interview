@@ -18,41 +18,82 @@ Write a script that reads stdin line by line and computes metrics:
 Warning: In this sample, you will have random value - it’s normal to not have
 the same output as this on
 """
-import sys
+import re
 
 
-words = []
-size_list = []
-status_dict = {'200': 0, '301': 0, '400': 0,
-               '401': 0, '403': 0, '404': 0, '405': 0, '500': 0}
-sum_size = 0
+def extract_input(input_line):
+    '''Extracts sections of a line of an HTTP request log.
+    '''
+    fp = (
+        r'\s*(?P<ip>\S+)\s*',
+        r'\s*\[(?P<date>\d+\-\d+\-\d+ \d+:\d+:\d+\.\d+)\]',
+        r'\s*"(?P<request>[^"]*)"\s*',
+        r'\s*(?P<status_code>\S+)',
+        r'\s*(?P<file_size>\d+)'
+    )
+    info = {
+        'status_code': 0,
+        'file_size': 0,
+    }
+    log_fmt = '{}\\-{}{}{}{}\\s*'.format(fp[0], fp[1], fp[2], fp[3], fp[4])
+    resp_match = re.fullmatch(log_fmt, input_line)
+    if resp_match is not None:
+        status_code = resp_match.group('status_code')
+        file_size = int(resp_match.group('file_size'))
+        info['status_code'] = status_code
+        info['file_size'] = file_size
+    return info
 
-try:
-    for line in sys.stdin:
-        words.append(line)
-        if len(words) % 10 == 0:
-            for i in range(len(words)):
-                size_file = words[i]
-                file_split = size_file.split(' ')
-                file_size = file_split[-1]
-                status_code = file_split[-2]
-                if status_code in status_dict:
-                    status_dict[status_code] += 1
-                size_list.append(file_size)
-            for sizes in size_list:
-                sum_size = sum_size + int(sizes)
-            print("File size: {}".format(sum_size))
-            for k, v in status_dict.items():
-                if status_dict[k] != 0:
-                    print("{}: {}".format(k, status_dict[k]))
-            status_dict = {'200': 0, '301': 0, '400': 0,
-                           '401': 0, '403': 0, '404': 0, '405': 0, '500': 0}
-except KeyboardInterrupt:
-    pass
-finally:
-    for sizes in size_list:
-        sum_size = sum_size + int(sizes)
-    print("File size: {}".format(sum_size))
-    for k, v in status_dict.items():
-        if status_dict[k] != 0:
-            print("{}: {}".format(k, status_dict[k]))
+
+def print_statistics(total_file_size, status_codes_stats):
+    '''Prints the accumulated statistics of the HTTP request log.
+    '''
+    print('File size: {:d}'.format(total_file_size), flush=True)
+    for status_code in sorted(status_codes_stats.keys()):
+        num = status_codes_stats.get(status_code, 0)
+        if num > 0:
+            print('{:s}: {:d}'.format(status_code, num), flush=True)
+
+
+def update_metrics(line, total_file_size, status_codes_stats):
+    '''Updates the metrics from a given HTTP request log.
+    '''
+    line_info = extract_input(line)
+    status_code = line_info.get('status_code', '0')
+    if status_code in status_codes_stats.keys():
+        status_codes_stats[status_code] += 1
+    return total_file_size + line_info['file_size']
+
+
+def run():
+    '''Starts the log parser.
+    '''
+    line_num = 0
+    total_file_size = 0
+    status_codes_stats = {
+        '200': 0,
+        '301': 0,
+        '400': 0,
+        '401': 0,
+        '403': 0,
+        '404': 0,
+        '405': 0,
+        '500': 0,
+    }
+    try:
+        while True:
+            line = input()
+            total_file_size = update_metrics(
+                line,
+                total_file_size,
+                status_codes_stats,
+            )
+            line_num += 1
+            if line_num % 10 == 0:
+                print_statistics(total_file_size, status_codes_stats)
+    except (KeyboardInterrupt, EOFError):
+        print_statistics(total_file_size, status_codes_stats)
+
+
+if __name__ == '__main__':
+    run()
