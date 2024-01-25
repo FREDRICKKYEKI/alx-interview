@@ -5,6 +5,8 @@ Given an n x n 2D matrix, rotate it 90 degrees clockwise.
     - Do not return anything. The matrix must be edited in-place.
     - You can assume the matrix will have 2 dimensions and will not be empty.
 """
+
+
 def rotate_2d_matrix(matrix):
     """
     Rotate an n x n 2D matrix to 90 degrees clockwise.
@@ -27,12 +29,3 @@ def rotate_2d_matrix(matrix):
 
     for i, j in enumerate(rotated_mat):
         matrix[i] = rotated_mat[i]
-
-
-if __name__ == "__main__":
-    matrix = [[1, 2, 3],
-              [4, 5, 6],
-              [7, 8, 9]]
-
-    rotate_2d_matrix(matrix)
-    print(matrix)
