@@ -23,6 +23,7 @@ def generate_primes(n):
                 sieve[i] = False
     return primes
 
+
 def isWinner(x, nums):
     """Determine the winner of a prime game
     """
